@@ -39,6 +39,7 @@ def save_data(df):
 df = load_data()
 today = datetime.now().date()
 
+# Vi skapar fortfarande 52 veckor i databasen för säkerhetsskull
 fridays = []
 current = today + timedelta(days=(4 - today.weekday() + 7) % 7)
 if today.weekday() == 4:
@@ -65,9 +66,11 @@ def edit_schema_dialog():
     
     if input_kod == PIN_KOD:
         st.divider()
-        df_future = df[df['Datum'] >= today].sort_values("Datum")
-        date_select = st.selectbox("Välj fredag", df_future['Datum'])
+        # Admin kan se 6 månader framåt i dropdown för att kunna planera
+        max_edit_date = today + timedelta(days=180)
+        df_future = df[(df['Datum'] >= today) & (df['Datum'] <= max_edit_date)].sort_values("Datum")
         
+        date_select = st.selectbox("Välj fredag", df_future['Datum'])
         mode = st.radio("Vem talar?", ["Ordinarie", "Gäst", "Rensa"])
         
         if mode == "Ordinarie":
@@ -90,16 +93,18 @@ st.title("🕌 Khutba-schema")
 
 col1, col2 = st.columns([0.8, 0.2])
 with col1:
-    st.subheader("Aktuellt schema")
+    st.subheader("Schema (3 månader framåt)")
 with col2:
     if st.button("✎ Edit"):
         edit_schema_dialog()
 
 st.markdown("---")
 
-# --- TABELL-GENERERING ---
-# Filtrera: Visa endast idag och framåt
-df_view = df[df['Datum'] >= today].sort_values("Datum").copy()
+# --- TABELL-GENERERING (3 MÅNADER) ---
+# Beräkna slutdatum för vyn (90 dagar framåt)
+three_months_ahead = today + timedelta(days=90)
+df_view = df[(df['Datum'] >= today) & (df['Datum'] <= three_months_ahead)].sort_values("Datum").copy()
+
 df_view['Fredag'] = df_view['Datum'].apply(lambda x: x.strftime("%d %b"))
 display_df = df_view[['Fredag', 'Khatib']]
 
@@ -110,11 +115,10 @@ def apply_styles(row):
     elif val == ORDINARIE[1]: style = "background-color: #064724; color: white;"
     elif val == ORDINARIE[2]: style = "background-color: #540141; color: white;"
     elif val == "Ej bokat": style = "color: #999;"
-    else: style = "background-color: #784302; color: white;" # Gäst
+    else: style = "background-color: #784302; color: white;" 
     
     return [style] * len(row)
 
-# Skapa HTML-tabellen med Pandas styling
 styled_html = (
     display_df.style
     .apply(apply_styles, axis=1)
@@ -122,26 +126,14 @@ styled_html = (
     .to_html()
 )
 
-# Rendera tabellen via en HTML-komponent för att undvika att råkod visas
+# Rendera tabellen (minskat height eftersom vi har färre rader nu)
 components.html(f"""
     <div style="font-family: sans-serif; color: white;">
     <style>
-        table {{ 
-            width: 100%; 
-            border-collapse: collapse; 
-            margin-top: 10px;
-        }}
-        th {{ 
-            text-align: left; 
-            padding: 12px; 
-            border-bottom: 2px solid #555;
-            color: #ccc;
-        }}
-        td {{ 
-            padding: 12px; 
-            border-bottom: 1px solid #333; 
-        }}
+        table {{ width: 100%; border-collapse: collapse; }}
+        th {{ text-align: left; padding: 12px; border-bottom: 2px solid #555; color: #ccc; }}
+        td {{ padding: 12px; border-bottom: 1px solid #333; }}
     </style>
     {styled_html}
     </div>
-""", height=1500, scrolling=False)
+""", height=650, scrolling=False)

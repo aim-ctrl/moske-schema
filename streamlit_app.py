@@ -4,7 +4,6 @@ import requests
 from datetime import datetime, timedelta
 
 # --- KONFIGURATION ---
-# Se till att dessa är tillagda i din .streamlit/secrets.toml eller på Streamlit Cloud
 BIN_ID = st.secrets["JSONBIN_BIN_ID"]
 API_KEY = st.secrets["JSONBIN_API_KEY"]
 PIN_KOD = st.secrets["PIN_KOD"]
@@ -15,7 +14,7 @@ ORDINARIE = ["Mohammad Adlouni", "Hajj Adnan", "Akram"]
 
 st.set_page_config(page_title="Khutba-schema", layout="centered")
 
-# --- FUNKTIONER FÖR ATT LÄSA/SKRIVA ---
+# --- FUNKTIONER ---
 def load_data():
     try:
         res = requests.get(f"{URL}/latest", headers=HEADERS)
@@ -30,25 +29,25 @@ def load_data():
     return pd.DataFrame(columns=["Datum", "Khatib"])
 
 def save_data(df):
-    # Konvertera datum till strängar för JSON-kompatibilitet
     df_to_save = df.copy()
     df_to_save['Datum'] = df_to_save['Datum'].astype(str)
     json_data = df_to_save.to_dict(orient="records")
     requests.put(URL, headers=HEADERS, json=json_data)
 
-# --- LOGIK FÖR ATT GENERERA FREDAGAR ---
+# --- LOGIK FÖR DATUM ---
 df = load_data()
 today = datetime.now().date()
 
-# Skapa lista på 52 fredagar framåt
+# Generera 52 fredagar (samma logik som tidigare)
 fridays = []
-# Hitta nästa fredag
 current = today + timedelta(days=(4 - today.weekday() + 7) % 7)
+if today.weekday() == 4: # Om det är fredag idag, börja med idag
+    current = today
+
 for _ in range(52):
     fridays.append(current)
     current += timedelta(days=7)
 
-# Uppdatera databasen om datum saknas
 existing_dates = set(df['Datum']) if not df.empty else set()
 missing = [f for f in fridays if f not in existing_dates]
 
@@ -61,74 +60,61 @@ if missing:
 # --- MODAL (POPUP) FÖR EDITERING ---
 @st.dialog("Redigera schema ✎")
 def edit_schema_dialog():
-    st.write("Bekräfta med PIN-kod för att ändra bokning.")
+    st.write("Ange PIN-kod för att ändra.")
     input_kod = st.text_input("PIN-kod", type="password")
     
     if input_kod == PIN_KOD:
         st.divider()
-        # Endast framtida datum går att redigera
+        # Här visar vi bara datum från och med idag i dropdown-menyn
         df_future = df[df['Datum'] >= today].sort_values("Datum")
-        date_select = st.selectbox("Välj fredag", df_future['Datum'])
+        date_select = st.selectbox("Välj datum att ändra", df_future['Datum'])
         
-        mode = st.radio("Typ av bokning", ["Ordinarie", "Gäst", "Rensa"])
+        mode = st.radio("Vem ska tala?", ["Ordinarie", "Gäst", "Rensa"])
         
         if mode == "Ordinarie":
-            name = st.selectbox("Välj talare", ORDINARIE)
+            name = st.selectbox("Namn", ORDINARIE)
         elif mode == "Gäst":
-            name = st.text_input("Skriv namn på gäst")
+            name = st.text_input("Namn på gäst")
         else:
             name = "Ej bokat"
             
-        if st.button("Spara ändringar"):
-            # Uppdatera huvud-dataframe
+        if st.button("Spara"):
             df.loc[df['Datum'] == date_select, 'Khatib'] = name
             save_data(df)
-            st.success(f"Bokningen för {date_select} är nu sparad!")
+            st.success("Klart!")
             st.rerun()
     elif input_kod != "":
-        st.error("Felaktig kod. Försök igen.")
+        st.error("Fel kod.")
 
 # --- UI DESIGN ---
 st.title("🕌 Khutba-schema")
 
-# Header-rad med Edit-knapp
-col1, col2 = st.columns([0.85, 0.15])
+col1, col2 = st.columns([0.8, 0.2])
 with col1:
-    st.subheader("Schema för fredagsbön")
+    st.subheader("Aktuellt schema")
 with col2:
     if st.button("✎ Edit"):
         edit_schema_dialog()
 
 st.markdown("---")
 
-# Förbered visnings-data
+# FILTRERING: Visa endast rader där datumet är idag eller framåt
 df_view = df[df['Datum'] >= today].sort_values("Datum").copy()
-# Formatera datumet för snyggare visning (t.ex. "27 Dec")
+
+# Formatering för tabellen
 df_view['Fredag'] = df_view['Datum'].apply(lambda x: x.strftime("%d %b"))
 display_table = df_view[['Fredag', 'Khatib']]
 
-# CSS för att dölja index-numreringen och göra tabellen snygg
+# CSS för att dölja index (numrering) och snygga till
 st.markdown("""
     <style>
-    /* Döljer första kolumnen (numreringen) i tabellen */
     thead tr th:first-child {display:none}
     tbody tr th:first-child {display:none}
-    
-    /* Tvingar tabellen att ta upp hela bredden */
-    div[data-testid="stTable"] {
-        width: 100%;
-    }
-    
-    /* Gör texten lite tydligare */
-    td {
-        padding: 10px !important;
-        font-size: 16px;
-    }
-    th {
-        background-color: #f0f2f6;
-    }
+    div[data-testid="stTable"] { width: 100%; }
+    td { padding: 12px !important; font-size: 16px; border-bottom: 1px solid #eee; }
+    th { background-color: #f8f9fb; text-align: left !important; }
     </style>
     """, unsafe_allow_html=True)
 
-# Visa tabellen (st.table skapar ingen scrollbar utan visar allt direkt)
+# Visa tabellen (alltid full längd, ingen intern scroll)
 st.table(display_table)

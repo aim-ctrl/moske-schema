@@ -10,7 +10,7 @@ PIN_KOD = st.secrets["PIN_KOD"]
 URL = f"https://api.jsonbin.io/v3/b/{BIN_ID}"
 HEADERS = {"X-Master-Key": API_KEY, "Content-Type": "application/json"}
 
-ORDINARIE = ["Imam Ahmed", "Broder Said", "Imam Hassan"]
+ORDINARIE = ["Mohammad Adlouni", "Hajj Adnan", "Akram"]
 
 st.set_page_config(page_title="Khutba-schema", layout="centered")
 

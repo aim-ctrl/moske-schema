@@ -28,7 +28,7 @@ st.markdown("""
     /* Justerar container-marginalen för att ta bort tomrummet högst upp */
     .block-container {
         padding-top: 1rem !important; 
-        margin-top: -2rem !important;
+        margin-top: -1rem !important;
     }
 
     #MainMenu {visibility: hidden;}

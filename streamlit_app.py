@@ -15,6 +15,16 @@ ORDINARIE = ["Mohammad Adlouni", "Hajj Adnan", "Akram"]
 
 st.set_page_config(page_title="Khutba-schema", layout="centered")
 
+# --- TA BORT INBYGGD HEADER ---
+st.markdown("""
+    <style>
+        #MainMenu {visibility: hidden;}
+        footer {visibility: hidden;}
+        header {visibility: hidden;}
+        .stDeployButton {display:none;}
+    </style>
+""", unsafe_allow_html=True)
+
 # --- FUNKTIONER FÖR ATT LÄSA/SKRIVA ---
 def load_data():
     try:
@@ -39,7 +49,6 @@ def save_data(df):
 df = load_data()
 today = datetime.now().date()
 
-# Vi skapar fortfarande 52 veckor i databasen för säkerhetsskull
 fridays = []
 current = today + timedelta(days=(4 - today.weekday() + 7) % 7)
 if today.weekday() == 4:
@@ -66,7 +75,6 @@ def edit_schema_dialog():
     
     if input_kod == PIN_KOD:
         st.divider()
-        # Admin kan se 6 månader framåt i dropdown för att kunna planera
         max_edit_date = today + timedelta(days=90)
         df_future = df[(df['Datum'] >= today) & (df['Datum'] <= max_edit_date)].sort_values("Datum")
         
@@ -90,16 +98,14 @@ def edit_schema_dialog():
 
 # --- UI DESIGN ---
 
-
 col1, col2 = st.columns([0.8, 0.2])
 with col1:
-    st.subheader("🕌 Khutba-schema")
+    st.subheader(" Khutba-schema")
 with col2:
     if st.button("✎ Ändra"):
         edit_schema_dialog()
 
 # --- TABELL-GENERERING (3 MÅNADER) ---
-# Beräkna slutdatum för vyn (90 dagar framåt)
 three_months_ahead = today + timedelta(days=90)
 df_view = df[(df['Datum'] >= today) & (df['Datum'] <= three_months_ahead)].sort_values("Datum").copy()
 
@@ -124,7 +130,6 @@ styled_html = (
     .to_html()
 )
 
-# Rendera tabellen (minskat height eftersom vi har färre rader nu)
 components.html(f"""
     <div style="font-family: sans-serif; color: white;">
     <style>

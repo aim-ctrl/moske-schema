@@ -15,12 +15,23 @@ ORDINARIE = ["Mohammad Adlouni", "Hajj Adnan", "Akram"]
 
 st.set_page_config(page_title="Khutba-schema", layout="centered")
 
-# --- TA BORT INBYGGD HEADER ---
+# --- KRAFTFULLARE CSS FÖR ATT TA BORT HEADER & MARGINALER ---
 st.markdown("""
     <style>
+        /* Döljer Streamlit-headern helt */
+        header[data-testid="stHeader"] {
+            display: none !important;
+        }
+        
+        /* Tar bort marginalen som skapas i toppen av appen */
+        .main .block-container {
+            padding-top: 0rem !important;
+            padding-bottom: 0rem !important;
+        }
+
+        /* Döljer hamburgermenyn och deploy-knappen */
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
-        header {visibility: hidden;}
         .stDeployButton {display:none;}
     </style>
 """, unsafe_allow_html=True)
@@ -97,10 +108,9 @@ def edit_schema_dialog():
         st.error("Felaktig kod.")
 
 # --- UI DESIGN ---
-
 col1, col2 = st.columns([0.8, 0.2])
 with col1:
-    st.subheader(" Khutba-schema")
+    st.subheader("🕌 Khutba-schema")
 with col2:
     if st.button("✎ Ändra"):
         edit_schema_dialog()

@@ -93,7 +93,7 @@ st.title("🕌 Khutba-schema")
 
 col1, col2 = st.columns([0.8, 0.2])
 with col1:
-    st.subheader("Schema (3 månader framåt)")
+    st.subheader(" ")
 with col2:
     if st.button("✎ Edit"):
         edit_schema_dialog()

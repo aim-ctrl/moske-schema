@@ -38,10 +38,10 @@ def save_data(df):
 df = load_data()
 today = datetime.now().date()
 
-# Generera 52 fredagar (samma logik som tidigare)
+# Se till att vi har 52 fredagar (starta med idag om det är fredag)
 fridays = []
 current = today + timedelta(days=(4 - today.weekday() + 7) % 7)
-if today.weekday() == 4: # Om det är fredag idag, börja med idag
+if today.weekday() == 4:
     current = today
 
 for _ in range(52):
@@ -65,11 +65,9 @@ def edit_schema_dialog():
     
     if input_kod == PIN_KOD:
         st.divider()
-        # Här visar vi bara datum från och med idag i dropdown-menyn
         df_future = df[df['Datum'] >= today].sort_values("Datum")
-        date_select = st.selectbox("Välj datum att ändra", df_future['Datum'])
-        
-        mode = st.radio("Vem ska tala?", ["Ordinarie", "Gäst", "Rensa"])
+        date_select = st.selectbox("Välj datum", df_future['Datum'])
+        mode = st.radio("Vem talar?", ["Ordinarie", "Gäst", "Rensa"])
         
         if mode == "Ordinarie":
             name = st.selectbox("Namn", ORDINARIE)
@@ -81,7 +79,7 @@ def edit_schema_dialog():
         if st.button("Spara"):
             df.loc[df['Datum'] == date_select, 'Khatib'] = name
             save_data(df)
-            st.success("Klart!")
+            st.success("Sparat!")
             st.rerun()
     elif input_kod != "":
         st.error("Fel kod.")
@@ -98,23 +96,44 @@ with col2:
 
 st.markdown("---")
 
-# FILTRERING: Visa endast rader där datumet är idag eller framåt
-df_view = df[df['Datum'] >= today].sort_values("Datum").copy()
+# --- FÄRGKODNING VIA CSS/HTML ---
+def get_row_style(khatib):
+    if khatib == ORDINARIE[0]: return "background-color: #1d314f; color: white;"
+    if khatib == ORDINARIE[1]: return "background-color: #064724; color: white;"
+    if khatib == ORDINARIE[2]: return "background-color: #540141; color: white;"
+    if khatib == "Ej bokat": return "color: #999;"
+    return "background-color: #784302; color: white;" # Gäst
 
-# Formatering för tabellen
-df_view['Fredag'] = df_view['Datum'].apply(lambda x: x.strftime("%d %b"))
-display_table = df_view[['Fredag', 'Khatib']]
+# Filtrera och bygg HTML-tabell
+df_view = df[df['Datum'] >= today].sort_values("Datum")
 
-# CSS för att dölja index (numrering) och snygga till
-st.markdown("""
-    <style>
-    thead tr th:first-child {display:none}
-    tbody tr th:first-child {display:none}
-    div[data-testid="stTable"] { width: 100%; }
-    td { padding: 12px !important; font-size: 16px; border-bottom: 1px solid #eee; }
-    th { background-color: #f8f9fb; text-align: left !important; }
-    </style>
-    """, unsafe_allow_html=True)
+html_table = """
+<style>
+    .custom-table { width: 100%; border-collapse: collapse; font-family: sans-serif; }
+    .custom-table th { text-align: left; padding: 12px; border-bottom: 2px solid #444; }
+    .custom-table td { padding: 12px; border-bottom: 1px solid #eee; }
+</style>
+<table class="custom-table">
+    <thead>
+        <tr>
+            <th>Fredag</th>
+            <th>Talare</th>
+        </tr>
+    </thead>
+    <tbody>
+"""
 
-# Visa tabellen (alltid full längd, ingen intern scroll)
-st.table(display_table)
+for _, row in df_view.iterrows():
+    style = get_row_style(row['Khatib'])
+    datum_str = row['Datum'].strftime("%d %b")
+    html_table += f"""
+        <tr style="{style}">
+            <td>{datum_str}</td>
+            <td>{row['Khatib']}</td>
+        </tr>
+    """
+
+html_table += "</tbody></table>"
+
+# Rendera den färgkodade tabellen
+st.markdown(html_table, unsafe_allow_html=True)

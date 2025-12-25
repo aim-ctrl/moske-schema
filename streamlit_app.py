@@ -67,7 +67,7 @@ def edit_schema_dialog():
     if input_kod == PIN_KOD:
         st.divider()
         # Admin kan se 6 månader framåt i dropdown för att kunna planera
-        max_edit_date = today + timedelta(days=180)
+        max_edit_date = today + timedelta(days=90)
         df_future = df[(df['Datum'] >= today) & (df['Datum'] <= max_edit_date)].sort_values("Datum")
         
         date_select = st.selectbox("Välj fredag", df_future['Datum'])

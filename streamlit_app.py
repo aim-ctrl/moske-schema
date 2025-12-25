@@ -13,29 +13,27 @@ HEADERS = {"X-Master-Key": API_KEY, "Content-Type": "application/json"}
 
 ORDINARIE = ["Mohammad Adlouni", "Hajj Adnan", "Akram"]
 
-st.set_page_config(page_title="Khutba-schema", layout="centered")
+# --- SIDKONFIGURATION ---
+st.set_page_config(page_title="Khutba-schema", layout="centered", initial_sidebar_state="collapsed")
 
-# --- NY AGGRESSIV METOD FÖR ATT TA BORT HEADER ---
+# --- STYLING (HÄMTAT FRÅN DIN FUNGERANDE APP) ---
 st.markdown("""
     <style>
-        /* Döljer alla möjliga header-element */
-        [data-testid="stHeader"], 
-        header, 
-        .st-emotion-cache-18ni7ap, 
-        .st-emotion-cache-z5fcl4 {
-            display: none !important;
-            height: 0;
-        }
-        
-        /* Flyttar upp innehållet så det inte blir ett tomrum */
-        .main .block-container {
-            padding-top: 0rem !important;
-            margin-top: -5rem !important;
-        }
-        
-        #MainMenu {visibility: hidden;}
-        footer {visibility: hidden;}
-        .stDeployButton {display:none;}
+    /* Döljer Streamlits header, meny och deploy-knapp */
+    header[data-testid="stHeader"] {
+        visibility: hidden;
+        height: 0%;
+    }
+    
+    /* Justerar container-marginalen för att ta bort tomrummet högst upp */
+    .block-container {
+        padding-top: 1rem !important; 
+        margin-top: -3rem !important;
+    }
+
+    #MainMenu {visibility: hidden;}
+    footer {visibility: hidden;}
+    .stDeployButton {display:none;}
     </style>
 """, unsafe_allow_html=True)
 

@@ -14,7 +14,7 @@ ORDINARIE = ["Mohammad Adlouni", "Hajj Adnan", "Akram"]
 
 st.set_page_config(page_title="Khutba-schema", layout="centered")
 
-# --- FUNKTIONER FÖR ATT LÄSA/SKRIVA ---
+# --- FUNKTIONER ---
 def load_data():
     res = requests.get(f"{URL}/latest", headers=HEADERS)
     if res.status_code == 200:
@@ -26,24 +26,22 @@ def load_data():
     return pd.DataFrame(columns=["Datum", "Khatib"])
 
 def save_data(df):
-    # Gör om datum till strängar innan vi sparar till JSON
     df_to_save = df.copy()
     df_to_save['Datum'] = df_to_save['Datum'].astype(str)
     json_data = df_to_save.to_dict(orient="records")
     requests.put(URL, headers=HEADERS, json=json_data)
 
-# --- AUTO-GENERERA FREDAGAR ---
+# --- LOGIK FÖR DATUM ---
 df = load_data()
 today = datetime.now().date()
 
-# Skapa lista på 52 fredagar framåt
+# Se till att vi har 52 veckor framåt
 fridays = []
 current = today + timedelta(days=(4 - today.weekday() + 7) % 7)
 for _ in range(52):
     fridays.append(current)
     current += timedelta(days=7)
 
-# Kolla om datum saknas
 existing_dates = set(df['Datum']) if not df.empty else set()
 missing = [f for f in fridays if f not in existing_dates]
 
@@ -53,43 +51,61 @@ if missing:
     save_data(df)
     st.rerun()
 
-# --- DESIGN ---
-st.title("🕌 Khutba-schema")
-st.markdown("---")
-
-df_view = df[df['Datum'] >= today].sort_values("Datum")
-
-def style_row(row):
-    val = row['Khatib']
-    if val == ORDINARIE[0]: return ['background-color: #1d314f'] * 2
-    if val == ORDINARIE[1]: return ['background-color: #064724'] * 2
-    if val == ORDINARIE[2]: return ['background-color: #540141'] * 2
-    if val == "Ej bokat": return ['color: #999'] * 2
-    return ['background-color: #784302'] * 2 # Gäst
-
-st.dataframe(
-    df_view.style.apply(style_row, axis=1),
-    use_container_width=True,
-    hide_index=True,
-    column_config={"Datum": st.column_config.DateColumn("Fredag", format="D MMM"), "Khatib": "Talare"}
-)
-
-# --- ADMIN ---
-with st.expander("Admin-inloggning"):
-    kod = st.text_input("Kod", type="password")
-    if kod == PIN_KOD:
-        date_select = st.selectbox("Välj datum", df_view['Datum'])
+# --- MODAL (POPUP) FÖR EDITERING ---
+@st.dialog("Redigera schema ✎")
+def edit_schema_dialog():
+    st.write("Ange PIN-kod för att göra ändringar.")
+    input_kod = st.text_input("Kod", type="password")
+    
+    if input_kod == PIN_KOD:
+        st.divider()
+        df_future = df[df['Datum'] >= today].sort_values("Datum")
+        date_select = st.selectbox("Vilket datum vill du ändra?", df_future['Datum'])
+        
         mode = st.radio("Vem talar?", ["Ordinarie", "Gäst", "Rensa"])
+        name = ""
         
         if mode == "Ordinarie":
-            name = st.selectbox("Namn", ORDINARIE)
+            name = st.selectbox("Välj namn", ORDINARIE)
         elif mode == "Gäst":
             name = st.text_input("Namn på gäst")
         else:
             name = "Ej bokat"
             
-        if st.button("Spara"):
+        if st.button("Spara ändring"):
             df.loc[df['Datum'] == date_select, 'Khatib'] = name
             save_data(df)
-            st.success("Sparat!")
+            st.success(f"Uppdaterat för {date_select}!")
             st.rerun()
+    elif input_kod != "":
+        st.error("Felaktig kod.")
+
+# --- UI DESIGN ---
+st.title(" 🕌 Khutba-schema")
+
+# Rad med knapp för att öppna editering
+col1, col2 = st.columns([0.8, 0.2])
+with col1:
+    st.subheader("Kommande fredagar")
+with col2:
+    if st.button("✎ Edit"):
+        edit_schema_dialog()
+
+st.markdown("---")
+
+# Filtrera data för visning
+df_view = df[df['Datum'] >= today].sort_values("Datum").copy()
+df_view['Fredag'] = df_view['Datum'].apply(lambda x: x.strftime("%d %b"))
+df_view = df_view[['Fredag', 'Khatib']]
+
+# Visning med st.table för att undvika scrollbar (visar allt)
+st.table(df_view)
+
+# CSS för att snygga till tabellen lite (valfritt)
+st.markdown("""
+<style>
+    div[data-testid="stTable"] {
+        width: 100%;
+    }
+</style>
+""", unsafe_allow_html=True)

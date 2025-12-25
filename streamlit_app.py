@@ -38,7 +38,6 @@ def save_data(df):
 df = load_data()
 today = datetime.now().date()
 
-# Se till att vi har 52 fredagar (starta med idag om det är fredag)
 fridays = []
 current = today + timedelta(days=(4 - today.weekday() + 7) % 7)
 if today.weekday() == 4:
@@ -96,44 +95,37 @@ with col2:
 
 st.markdown("---")
 
-# --- FÄRGKODNING VIA CSS/HTML ---
-def get_row_style(khatib):
-    if khatib == ORDINARIE[0]: return "background-color: #1d314f; color: white;"
-    if khatib == ORDINARIE[1]: return "background-color: #064724; color: white;"
-    if khatib == ORDINARIE[2]: return "background-color: #540141; color: white;"
-    if khatib == "Ej bokat": return "color: #999;"
-    return "background-color: #784302; color: white;" # Gäst
+# --- TABELL-STYLING ---
+df_view = df[df['Datum'] >= today].sort_values("Datum").copy()
+df_view['Fredag'] = df_view['Datum'].apply(lambda x: x.strftime("%d %b"))
+display_df = df_view[['Fredag', 'Khatib']]
 
-# Filtrera och bygg HTML-tabell
-df_view = df[df['Datum'] >= today].sort_values("Datum")
+def apply_styles(row):
+    val = row['Khatib']
+    styles = [''] * len(row)
+    if val == ORDINARIE[0]: bg = "background-color: #1d314f; color: white;"
+    elif val == ORDINARIE[1]: bg = "background-color: #064724; color: white;"
+    elif val == ORDINARIE[2]: bg = "background-color: #540141; color: white;"
+    elif val == "Ej bokat": bg = "color: #999;"
+    else: bg = "background-color: #784302; color: white;" # Gäst
+    
+    return [bg] * len(row)
 
-html_table = """
-<style>
-    .custom-table { width: 100%; border-collapse: collapse; font-family: sans-serif; }
-    .custom-table th { text-align: left; padding: 12px; border-bottom: 2px solid #444; }
-    .custom-table td { padding: 12px; border-bottom: 1px solid #eee; }
-</style>
-<table class="custom-table">
-    <thead>
-        <tr>
-            <th>Fredag</th>
-            <th>Talare</th>
-        </tr>
-    </thead>
-    <tbody>
-"""
+# Skapa den stylade tabellen och dölj index
+styled_html = (
+    display_df.style
+    .apply(apply_styles, axis=1)
+    .hide(axis='index')
+    .set_table_attributes('style="width:100%; border-collapse: collapse;"')
+    .to_html()
+)
 
-for _, row in df_view.iterrows():
-    style = get_row_style(row['Khatib'])
-    datum_str = row['Datum'].strftime("%d %b")
-    html_table += f"""
-        <tr style="{style}">
-            <td>{datum_str}</td>
-            <td>{row['Khatib']}</td>
-        </tr>
-    """
-
-html_table += "</tbody></table>"
-
-# Rendera den färgkodade tabellen
-st.markdown(html_table, unsafe_allow_html=True)
+# Lägg till lite extra CSS för att snygga till cellerna
+st.markdown(f"""
+    <style>
+        table {{ width: 100%; }}
+        th {{ text-align: left; padding: 10px; border-bottom: 2px solid #ccc; }}
+        td {{ padding: 10px; border-bottom: 1px solid #eee; }}
+    </style>
+    {styled_html}
+""", unsafe_allow_html=True)

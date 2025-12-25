@@ -98,8 +98,6 @@ with col2:
     if st.button("✎ Edit"):
         edit_schema_dialog()
 
-st.markdown("---")
-
 # --- TABELL-GENERERING (3 MÅNADER) ---
 # Beräkna slutdatum för vyn (90 dagar framåt)
 three_months_ahead = today + timedelta(days=90)

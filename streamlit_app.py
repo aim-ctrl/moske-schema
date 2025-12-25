@@ -63,9 +63,9 @@ def style_row(row):
     val = row['Khatib']
     if val == ORDINARIE[0]: return ['background-color: #1d314f'] * 2
     if val == ORDINARIE[1]: return ['background-color: #064724'] * 2
-    if val == ORDINARIE[2]: return ['background-color: #522e05'] * 2
+    if val == ORDINARIE[2]: return ['background-color: #540141'] * 2
     if val == "Ej bokat": return ['color: #999'] * 2
-    return ['background-color: #f8d7da'] * 2 # Gäst
+    return ['background-color: #784302'] * 2 # Gäst
 
 st.dataframe(
     df_view.style.apply(style_row, axis=1),

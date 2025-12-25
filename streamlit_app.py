@@ -61,9 +61,9 @@ df_view = df[df['Datum'] >= today].sort_values("Datum")
 
 def style_row(row):
     val = row['Khatib']
-    if val == ORDINARIE[0]: return ['background-color: #d1e7dd'] * 2
-    if val == ORDINARIE[1]: return ['background-color: #cfe2ff'] * 2
-    if val == ORDINARIE[2]: return ['background-color: #fff3cd'] * 2
+    if val == ORDINARIE[0]: return ['background-color: #1d314f'] * 2
+    if val == ORDINARIE[1]: return ['background-color: #064724'] * 2
+    if val == ORDINARIE[2]: return ['background-color: #522e05'] * 2
     if val == "Ej bokat": return ['color: #999'] * 2
     return ['background-color: #f8d7da'] * 2 # Gäst
 

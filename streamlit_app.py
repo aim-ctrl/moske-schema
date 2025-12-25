@@ -15,21 +15,24 @@ ORDINARIE = ["Mohammad Adlouni", "Hajj Adnan", "Akram"]
 
 st.set_page_config(page_title="Khutba-schema", layout="centered")
 
-# --- KRAFTFULLARE CSS FÖR ATT TA BORT HEADER & MARGINALER ---
+# --- NY AGGRESSIV METOD FÖR ATT TA BORT HEADER ---
 st.markdown("""
     <style>
-        /* Döljer Streamlit-headern helt */
-        header[data-testid="stHeader"] {
+        /* Döljer alla möjliga header-element */
+        [data-testid="stHeader"], 
+        header, 
+        .st-emotion-cache-18ni7ap, 
+        .st-emotion-cache-z5fcl4 {
             display: none !important;
+            height: 0;
         }
         
-        /* Tar bort marginalen som skapas i toppen av appen */
+        /* Flyttar upp innehållet så det inte blir ett tomrum */
         .main .block-container {
             padding-top: 0rem !important;
-            padding-bottom: 0rem !important;
+            margin-top: -5rem !important;
         }
-
-        /* Döljer hamburgermenyn och deploy-knappen */
+        
         #MainMenu {visibility: hidden;}
         footer {visibility: hidden;}
         .stDeployButton {display:none;}
